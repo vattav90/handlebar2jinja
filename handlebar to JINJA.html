@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Handlebars to Jinja Converter with Replacements</title>
+    <style>
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Handlebars to Jinja Converter</h1>
+    <textarea id="jsonReplacements" placeholder="Enter JSON replacements here (e.g., {&quot;key&quot;: &quot;value&quot;})"></textarea>
+    <textarea id="handlebarsInput" placeholder="Enter Handlebars.js code here..."></textarea>
+    <button id="convertButton">Convert to Jinja</button>
+    <textarea id="jinjaOutput" placeholder="Jinja output will appear here..." readonly></textarea>
+
+    <script>
+        document.getElementById('convertButton').addEventListener('click', function() {
+            const jsonReplacements = document.getElementById('jsonReplacements').value;
+            const handlebarsCode = document.getElementById('handlebarsInput').value;
+            const replacements = parseReplacements(jsonReplacements);
+            const replacedHandlebars = applyReplacements(handlebarsCode, replacements);
+            const jinjaOutput = convertHandlebarsToJinja(replacedHandlebars);
+            document.getElementById('jinjaOutput').value = jinjaOutput;
+        });
+
+        // Helper function to parse JSON replacements
+        function parseReplacements(jsonString) {
+            try {
+                return JSON.parse(jsonString);
+            } catch (error) {
+                alert('Invalid JSON format for replacements.');
+                return {};
+            }
+        }
+
+        // Helper function to apply replacements to the Handlebars code
+        function applyReplacements(handlebarsCode, replacements) {
+            return Object.keys(replacements).reduce((code, key) => {
+                const value = replacements[key];
+                const regExp = new RegExp('\\b' + escapeRegExp(key) + '\\b', 'g');
+                return code.replace(regExp, value);
+            }, handlebarsCode);
+        }
+
+        // Helper function to escape special characters for RegExp
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function convertHandlebarsToJinja(handlebarsCode) {
+    // Convert encode with 'url-base64' type when it contains a concat
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*encode\s+\(\s*concat\s+([^}]+?)\s*\)\s*encodeType='url-base64'\s*\}\}/g,
+        function(match, concatArgs) {
+            // Process the concat arguments
+            const args = concatArgs.match(/(?:'[^']*'|[\w\.]+)/g);
+            const jinjaArgs = args.map(arg => {
+                if (arg.startsWith("'") && arg.endsWith("'")) {
+                    // String literals have quotes stripped and are wrapped in quotes again
+                    return `'${arg.slice(1, -1)}'`;
+                } else {
+                    // Variables are used directly without wrapping in quotes
+                    return arg;
+                }
+            }).join('~'); // Join with '~' for Jinja string concatenation
+            // Wrap the whole expression in parentheses before applying filters
+            return `{{ (${jinjaArgs})|urlencode|base64 }}`;
+        }
+    );
+
+    // Convert encode with 'url-base64' type
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*encode\s+([\w\.]+)\s*encodeType='url-base64'\s*\}\}/g,
+        '{{ $1|urlencode|base64 }}'
+    );
+
+    // Convert encode with 'urlEncode' type
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*encode\s+([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
+        '{{ $1|urlencode }}'
+    );
+
+    // Convert md5-convert expressions
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*conversion\s+([\w\.]+)\s+'md5-convert'\s*\}\}/g,
+        '{{ $1|md5 }}'
+    );
+
+    // Replace custom compare blocks
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*#compare\s+(\w+)\.(\w+)\s+'(\w+)'\s+operator\s*=\s*'\=\='\s*\}\}/g,
+        '{% if $1.$2 == \'$3\' %}'
+    );
+    
+    // Convert moment date formatting expressions
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*moment\s+([\w\.]+)\s+key='others'\s+type='format'\s+newdateformat='([^']+)'}}/g,
+        function (match, variableName, newDateFormat) {
+            // Convert Handlebars moment format to Python strftime format
+            const pythonDateFormat = newDateFormat.replace('Do', '%d')
+                                                   .replace('MMM', '%b')
+                                                   .replace('YYYY', '%Y');
+            return `{{ ${variableName}|dateTimeFormatter(toFormat='${pythonDateFormat}') }}`;
+        }
+    );
+    
+    // Replace basic Handlebars expressions with Jinja syntax
+    handlebarsCode = handlebarsCode
+        .replace(/\{\{\s*([^\s\}]+)\s*\}\}/g, '{{ $1 }}')
+        .replace(/\{\{#if\s+([^\s\}]+)\}\}/g, '{% if $1 %}')
+        .replace(/\{\{else\}\}/g, '{% else %}')
+        .replace(/\{\{#each\s+([^\s\}]+)\}\}/g, '{% for item in $1 %}')
+        .replace(/\{\{\/if\}\}/g, '{% endif %}')
+        .replace(/\{\{\/each\}\}/g, '{% endfor %}')
+        .replace(/\{\{\s*\/compare\s*\}\}/g, '{% endif %}')
+        .replace(/\{\{\s*\/if\s*\}\}/g, '{% endif %}');
+
+    // Return the converted Jinja code
+    return handlebarsCode;
+}
+    </script>
+</body>
+</html>
