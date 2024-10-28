@@ -13,7 +13,7 @@
 </head>
 <body>
     <h1>Handlebars to Jinja Converter</h1>
-    <textarea id="jsonReplacements" placeholder="Enter JSON replacements here (e.g., {&quot;key&quot;: &quot;value&quot;})"></textarea>
+    <textarea id="jsonReplacements" placeholder="Enter JSON replacements here (e.g., {&quot;key&quot;: &quot;value&quot;})" value="{}"></textarea>
     <textarea id="handlebarsInput" placeholder="Enter Handlebars.js code here..."></textarea>
     <button id="convertButton">Convert to Jinja</button>
     <textarea id="jinjaOutput" placeholder="Jinja output will appear here..." readonly></textarea>
@@ -29,14 +29,18 @@
         });
 
         // Helper function to parse JSON replacements
-        function parseReplacements(jsonString) {
-            try {
-                return JSON.parse(jsonString);
-            } catch (error) {
-                alert('Invalid JSON format for replacements.');
-                return {};
-            }
-        }
+function parseReplacements(jsonString) {
+    // Check if the input string is empty or consists only of whitespace
+    if (!jsonString.trim()) {
+        return {}; // Return an empty object as the default value
+    }
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        alert('Invalid JSON format for replacements.');
+        return {};
+    }
+}
 
         // Helper function to apply replacements to the Handlebars code
         function applyReplacements(handlebarsCode, replacements) {
@@ -84,18 +88,70 @@
         /\{\{\s*encode\s+([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
         '{{ $1|urlencode }}'
     );
+            
+    // Convert encode with 'url-base64' type for paths with "../"
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*encode\s+(?:\.\.\/)*([\w\.]+)\s*encodeType='url-base64'\s*\}\}/g,
+        '{{ $1|urlencode|base64 }}'
+    );
+
+    // Convert encode with 'urlEncode' type for paths with "../"
+    handlebarsCode = handlebarsCode.replace(
+        /\{\{\s*encode\s+(?:\.\.\/)*([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
+        '{{ $1|urlencode }}'
+    );
 
     // Convert md5-convert expressions
     handlebarsCode = handlebarsCode.replace(
         /\{\{\s*conversion\s+([\w\.]+)\s+'md5-convert'\s*\}\}/g,
         '{{ $1|md5 }}'
     );
+            
+            
 
     // Replace custom compare blocks
-    handlebarsCode = handlebarsCode.replace(
-        /\{\{\s*#compare\s+(\w+)\.(\w+)\s+'(\w+)'\s+operator\s*=\s*'\=\='\s*\}\}/g,
-        '{% if $1.$2 == \'$3\' %}'
-    );
+handlebarsCode = handlebarsCode.replace(
+    /\{\{\s*#compare\s+(\w+)\s+(\d+)\s+operator\s*=\s*'([^']+)'\s*\}\}/g,
+    function(match, variable, value, operator) {
+        // Determine the Jinja equivalent for the captured Handlebars operator
+        let jinjaOperator;
+        switch (operator) {
+            case '==':
+            case '===':
+                jinjaOperator = '==';
+                break;
+            case '!=':
+            case '!==':
+                jinjaOperator = '!=';
+                break;
+            case '<':
+                jinjaOperator = '<';
+                break;
+            case '>':
+                jinjaOperator = '>';
+                break;
+            case '<=':
+                jinjaOperator = '<=';
+                break;
+            case '>=':
+                jinjaOperator = '>=';
+                break;
+            default:
+                // If the operator is not recognized, use it as is
+                jinjaOperator = operator;
+        }
+
+        return `{% if ${variable} ${jinjaOperator} ${value} %}`;
+    }
+).replace(
+    /\{\{\s*else\s*\}\}/g,
+    '{% else %}'
+).replace(
+    /\{\{\s*\/compare\s*\}\}/g,
+    '{% endif %}'
+);
+
+
     
     // Convert moment date formatting expressions
     handlebarsCode = handlebarsCode.replace(
@@ -116,7 +172,7 @@
         .replace(/\{\{else\}\}/g, '{% else %}')
         .replace(/\{\{#each\s+([^\s\}]+)\}\}/g, '{% for item in $1 %}')
         .replace(/\{\{\/if\}\}/g, '{% endif %}')
-        .replace(/\{\{\/each\}\}/g, '{% endfor %}')
+        .replace(/\{\{\s*\/each\s*\}\}/g, '{% endfor %}')
         .replace(/\{\{\s*\/compare\s*\}\}/g, '{% endif %}')
         .replace(/\{\{\s*\/if\s*\}\}/g, '{% endif %}');
 
