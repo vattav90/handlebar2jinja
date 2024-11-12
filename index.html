@@ -4,46 +4,155 @@
 <head>
     <meta charset="UTF-8">
     <title>Handlebars to Jinja Converter with Replacements</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        textarea {
-            width: 100%;
-            height: 150px;
+        .code-input,
+        .code-output {
+            height: 50vh !important;
+            /* Set the height of the textareas to 50% of the viewport height */
+        }
+
+        .copy-icon {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 10px;
+            cursor: pointer;
+            color: #000;
+        }
+
+        .form-row-container {
             margin-bottom: 10px;
+        }
+
+        #convertButton {
+            margin: 20px 0;
+            /* Add margin to the top and bottom of the button */
+        }
+
+        /* Reduce space between textarea columns by setting padding */
+        .row>.col,
+        .row>[class^="col-"] {
+            padding-right: 12px;
+            padding-left: 12px;
+
         }
 
     </style>
 </head>
 
 <body>
-    <h1>Handlebars to Jinja Converter</h1>
-    <textarea id="jsonReplacements" placeholder="Enter JSON replacements here (e.g., {&quot;key&quot;: &quot;value&quot;})"></textarea>
-    <textarea id="handlebarsInput" placeholder="Enter Handlebars.js code here..."></textarea>
-    <button id="convertButton">Convert to Jinja</button>
-    <textarea id="jinjaOutput" placeholder="Jinja output will appear here..." readonly></textarea>
+    <div class="container mt-4">
+        <h1>Handlebars to Jinja Converter</h1>
+
+        <div id="jsonReplacementsContainer">
+            <h2>Replacements</h2>
+            <div class="form-row form-row-container">
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Attribute">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Moengage Attribute">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-success" onclick="addKeyValuePair()">+</button>
+                </div>
+            </div>
+        </div>
+
+        <h2>Code</h2>
+        <div class="row">
+            
+            <div class="col">
+                <textarea id="handlebarsInput" class="form-control code-input" placeholder="Enter Handlebars.js code here..."></textarea>
+            </div>
+            <div class="col">
+                <textarea id="jinjaOutput" class="form-control code-output" placeholder="Jinja output will appear here" readonly></textarea>
+            </div>
+            <div class="col-auto">
+                <i class="fas fa-copy copy-icon" onclick="copyToClipboard()"></i>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button id="convertButton" class="btn btn-primary">Convert to Jinja</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function addKeyValuePair() {
+            var container = document.getElementById("jsonReplacementsContainer");
+            var formRow = document.createElement("div");
+            formRow.classList.add("form-row", "form-row-container");
+            formRow.innerHTML = `
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Attribute">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Moengage Attribute">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-danger" onclick="removeKeyValuePair(this)">-</button>
+                </div>`;
+            container.appendChild(formRow);
+        }
+
+        function removeKeyValuePair(button) {
+            button.closest(".form-row").remove();
+        }
+
+        function copyToClipboard() {
+            var jinjaOutputTextarea = document.getElementById('jinjaOutput');
+            jinjaOutputTextarea.select();
+            document.execCommand('copy');
+        }
+
+
+        // Function to collect key-value pairs and convert to JSON
+        function getReplacementsJSON() {
+            const pairs = document.querySelectorAll("#jsonReplacementsContainer .form-row");
+            const replacements = {};
+            pairs.forEach(pair => {
+                const key = pair.querySelector(".col input[type='text']").value.trim();
+                const value = pair.querySelector(".col + .col input[type='text']").value.trim();
+                if (key) { // Only add non-empty keys to replacements
+                    replacements[key] = value;
+                }
+            });
+            return replacements;
+        }
+
+    </script>
+
 
     <script>
         document.getElementById('convertButton').addEventListener('click', function() {
-            const jsonReplacements = document.getElementById('jsonReplacements').value;
+            // Convert key-value pairs to JSON here first
+            const jsonReplacements = JSON.stringify(getReplacementsJSON());
             const handlebarsCode = document.getElementById('handlebarsInput').value;
             const replacedHandlebars = convertHandlebarsToJinja(handlebarsCode);
+
+            // Parse the JSON string back to an object
             const replacements = parseReplacements(jsonReplacements);
-            let jinjaOutput = applyJsonReplacements(replacedHandlebars, replacements);
-            document.getElementById('jinjaOutput').value = jinjaOutput;
+            if (replacements) { // Ensure that replacements is not null
+                let jinjaOutput = applyJsonReplacements(replacedHandlebars, replacements);
+                document.getElementById('jinjaOutput').value = jinjaOutput;
+            }
         });
 
-        // Helper function to parse JSON replacements
         function parseReplacements(jsonString) {
-            if (!jsonString.trim()) {
-                return {}; // Return an empty object as the default value
-            }
             try {
                 return JSON.parse(jsonString);
             } catch (error) {
-                alert('Invalid JSON format for replacements.');
-                return {};
+                console.error('Invalid JSON format:', error);
+                // Return null or handle the error in another way
+                return null;
             }
         }
-
 
 
         // Helper function to apply final JSON replacements to the Handlebars code
