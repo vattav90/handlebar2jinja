@@ -63,133 +63,171 @@
         // Helper function to convert Handlebars to Jinja
         function convertHandlebarsToJinja(handlebarsCode) {
 
-                // Convert moment date formatting expressions
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*moment\s+([\w\.]+)\s+key='others'\s+type='format'\s+newdateformat='([^']+)'}}/g,
-                    function(match, variableName, newDateFormat) {
-                        // Convert Handlebars moment format to Python strftime format
-                        const pythonDateFormat = newDateFormat.replace('Do', '%d')
-                            .replace('MMM', '%b')
-                            .replace('YYYY', '%Y');
-                        return `{{ ${variableName}|dateTimeFormatter(toFormat='${pythonDateFormat}') }}`;
-                    }
-                );
+            // Convert moment date formatting expressions
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*moment\s+batch_creation_date_yyyymmdd\s+key='others'\s+type='format'\s+newdateformat='([^']+)'}}/g,
+                function(match, newDateFormat) {
+                    // Convert Handlebars moment format to Python strftime format
+                    const pythonDateFormat = newDateFormat.replace('Do', '%d')
+                        .replace('MMM', '%b')
+                        .replace('YYYY', '%Y');
+                    // Use the hardcoded replacement value
+                    return `{{ '%Y%m%d'|today('Asia/Kolkata')|dateTimeFormatter(toFormat='${pythonDateFormat}') }}`;
+                }
+            );
 
-                // Convert 'encode' expressions with 'url-base64' type for paths with "../"
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+(?:\.\.\/)*batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
-                    "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
-                );
+            // Convert 'encode' expressions with 'url-base64' type for paths with "../"
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+(?:\.\.\/)*batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
+                "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
+            );
 
-                // Convert 'encode' expressions with 'url-base64' type
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
-                    "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
-                );
-                // Convert encode expressions with 'url-base64' type for paths with "../"         
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+(?:\.\.\/)*batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
-                    "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
-                );
+            // Convert 'encode' expressions with 'url-base64' type
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
+                "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
+            );
+            // Convert encode expressions with 'url-base64' type for paths with "../"         
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+(?:\.\.\/)*batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
+                "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
+            );
 
-                // Convert encode expressions with 'url-base64' type
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
-                    "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
-                );
+            // Convert encode expressions with 'url-base64' type
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+batch_creation_date_yyyymmdd\s*encodeType='url-base64'\s*\}\}/g,
+                "{{'%Y%m%d'|today('Asia/Kolkata')|base64encode|urlencode}}"
+            );
 
-                // Convert encode with 'url-base64' type
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+([\w\.]+)\s*encodeType='url-base64'\s*\}\}/g,
-                    '{{ $1|base64encode|urlencode }}'
-                );
+            // Convert encode with 'url-base64' type
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+([\w\.]+)\s*encodeType='url-base64'\s*\}\}/g,
+                '{{ $1|base64encode|urlencode }}'
+            );
 
-                // Convert encode with 'urlEncode' type
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
-                    '{{ $1|urlencode }}'
-                );
+            // Convert encode with 'urlEncode' type
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
+                '{{ $1|urlencode }}'
+            );
 
-                // Convert encode with 'url-base64' type for paths with "../"
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+(?:\.\.\/)*([\w\.]+)\s*encodeType='url-base64'\s*\}\}/g,
-                    '{{ $1|base64encode|urlencode }}'
-                );
+            // Convert encode with 'url-base64' type for paths with "../"
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+(?:\.\.\/)*([\w\.]+)\s*encodeType='url-base64'\s*\}\}/g,
+                '{{ $1|base64encode|urlencode }}'
+            );
 
-                // Convert encode with 'urlEncode' type for paths with "../"
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+(?:\.\.\/)*([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
-                    '{{ $1|urlencode }}'
-                );
+            // Convert encode with 'urlEncode' type for paths with "../"
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+(?:\.\.\/)*([\w\.]+)\s*encodeType='urlEncode'\s*\}\}/g,
+                '{{ $1|urlencode }}'
+            );
 
-                handlebarsCode = handlebarsCode.replace(
-                    /\{\{\s*encode\s+\(\s*concat\s+([^}]+?)\s*\)\s*encodeType='url-base64'\s*\}\}/g,
-                    function(match, concatArgs) {
-                        // Process the concat arguments
-                        const args = concatArgs.match(/(?:'[^']*'|[\w\.]+)/g);
-                        const jinjaArgs = args.map(arg => {
-                            if (arg.startsWith("'") && arg.endsWith("'")) {
-                                // String literals have quotes stripped and are wrapped in quotes again
-                                return `'${arg.slice(1, -1)}'`;
-                            } else {
-                                // Variables are used directly without wrapping in quotes
-                                return arg;
-                            }
-                        }).join('~'); // Join with '~' for Jinja string concatenation
-                        // Wrap the whole expression in parentheses before applying filters
-                        return `{{ (${jinjaArgs})|base64encode|urlencode }}`;
-                    }
-                );
+            // Convert md5-convert expressions
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*conversion\s+([\w\.]+)\s+'md5-convert'\s*\}\}/g,
+                '{{ $1|md5 }}')
 
-
-                // Replace custom compare blocks
-                handlebarsCode = handlebarsCode.replace(
-                        /\{\{\s*#compare\s+(\w+)\s+(\d+)\s+operator\s*=\s*'([^']+)'\s*\}\}/g,
-                        function(match, variable, value, operator) {
-                            // Determine the Jinja equivalent for the captured Handlebars operator
-                            let jinjaOperator;
-                            switch (operator) {
-                                case '==':
-                                case '===':
-                                    jinjaOperator = '==';
-                                    break;
-                                case '!=':
-                                case '!==':
-                                    jinjaOperator = '!=';
-                                    break;
-                                case '<':
-                                    jinjaOperator = '<';
-                                    break;
-                                case '>':
-                                    jinjaOperator = '>';
-                                    break;
-                                case '<=':
-                                    jinjaOperator = '<=';
-                                    break;
-                                case '>=':
-                                    jinjaOperator = '>=';
-                                    break;
-                                default:
-                                    jinjaOperator = operator; // Use operator as is
-                            }
-                            return `{% if ${variable} ${jinjaOperator} ${value} %}`;
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*encode\s+\(\s*concat\s+([^}]+?)\s*\)\s*encodeType='url-base64'\s*\}\}/g,
+                function(match, concatArgs) {
+                    // Process the concat arguments
+                    const args = concatArgs.match(/(?:'[^']*'|[\w\.]+)/g);
+                    const jinjaArgs = args.map(arg => {
+                        if (arg.startsWith("'") && arg.endsWith("'")) {
+                            // String literals have quotes stripped and are wrapped in quotes again
+                            return `'${arg.slice(1, -1)}'`;
+                        } else {
+                            // Variables are used directly without wrapping in quotes
+                            return arg;
                         }
-                    ).replace(/\{\{\s*else\s*\}\}/g, '{% else %}')
-                    .replace(/\{\{\s*\/compare\s*\}\}/g, '{% endif %}');
+                    }).join('~'); // Join with '~' for Jinja string concatenation
+                    // Wrap the whole expression in parentheses before applying filters
+                    return `{{ (${jinjaArgs})|base64encode|urlencode }}`;
+                }
+            );
 
-                // Replace basic Handlebars expressions with Jinja syntax
-                handlebarsCode = handlebarsCode
-                    .replace(/\{\{\s*([^\s\}]+)\s*\}\}/g, '{{ $1 }}')
-                    .replace(/\{\{#if\s+([^\s\}]+)\}\}/g, '{% if $1 %}')
-                    .replace(/\{\{else\}\}/g, '{% else %}')
-                    .replace(/\{\{#each\s+([^\s\}]+)\}\}/g, '{% for item in $1 %}')
-                    .replace(/\{\{\/if\}\}/g, '{% endif %}')
-                    .replace(/\{\{\s*\/each\s*\}\}/g, '{% endfor %}')
-                    .replace(/\{\{\s*\/compare\s*\}\}/g, '{% endif %}')
-                    .replace(/\{\{\s*\/if\s*\}\}/g, '{% endif %}');
 
-                // Return the converted Jinja code
-                return handlebarsCode;
+            // Replace custom compare blocks to handle string literals, empty strings, and numeric values
+            handlebarsCode = handlebarsCode.replace(
+                    /\{\{#compare\s+([^'\s]+)\s+(['"]?)([^'"]*?)\2\s+operator\s*=\s*'([^']+)'\s*\}\}/g,
+                    function(match, variable, quote, value, operator) {
+                        // Determine the Jinja equivalent for the captured Handlebars operator
+                        let jinjaOperator;
+                        switch (operator) {
+                            case '==':
+                            case '===':
+                                jinjaOperator = '==';
+                                break;
+                            case '!=':
+                            case '!==':
+                                jinjaOperator = '!=';
+                                break;
+                            case '<':
+                                jinjaOperator = '<';
+                                break;
+                            case '>':
+                                jinjaOperator = '>';
+                                break;
+                            case '<=':
+                                jinjaOperator = '<=';
+                                break;
+                            case '>=':
+                                jinjaOperator = '>=';
+                                break;
+                            default:
+                                jinjaOperator = operator; // Use operator as is
+                        }
+                        // Include the quotes around the string literal if there was a quote in the match
+                        const formattedValue = quote ? `${quote}${value}${quote}` : value;
+                        return `{% if ${variable} ${jinjaOperator} ${formattedValue} %}`;
+                    }
+                ).replace(/\{\{\s*else\s*\}\}/g, '{% else %}')
+                .replace(/\{\{\s*\/compare\s*\}\}/g, '{% endif %}');
+
+            //Substring replacement
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*substr\s+(\w+)\s+index='(\d+)'\s*\}\}/g,
+                function(match, variableName, index) {
+                    return `{{ ${variableName}|truncate(${index}, false, "") }}`;
+                }
+            );
+            // Replace Handlebars `{{#unless}}` with Jinja2 `{% if not %}`
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*#unless\s+([^}]+)\s*\}\}/g,
+                function(match, condition) {
+                    return `{% if not ${condition.trim()} %}`;
+                }
+            );
+
+            // Replace Handlebars `{{/unless}}` with Jinja2 `{% endif %}`
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*\/unless\s*\}\}/g,
+                '{% endif %}'
+            );
+
+            // Replace Handlebars `{{calculate}}` with Jinja2 arithmetic expression
+            handlebarsCode = handlebarsCode.replace(
+                /\{\{\s*calculate\s+([^}\s]+)\s+([\d\.]+)\s+operator\s*=\s*['"](\-|\+|\*|\/)['"]\s*\}\}/g,
+                function(match, variable, value, operator) {
+                    // Construct the arithmetic expression based on the captured operator and values
+                    return `{{ ${variable} ${operator} ${value} }}`;
+                }
+            );
+
+            // Replace basic Handlebars expressions with Jinja syntax
+            handlebarsCode = handlebarsCode
+                .replace(/\{\{\s*([^\s\}]+)\s*\}\}/g, '{{ $1 }}')
+                .replace(/\{\{#if\s+([^\s\}]+)\}\}/g, '{% if $1 %}')
+                .replace(/\{\{else\}\}/g, '{% else %}')
+                .replace(/\{\{#each\s+([^\s\}]+)\}\}/g, '{% for item in $1 %}')
+                .replace(/\{\{\/if\}\}/g, '{% endif %}')
+                .replace(/\{\{\s*\/each\s*\}\}/g, '{% endfor %}')
+                .replace(/\{\{\s*\/compare\s*\}\}/g, '{% endif %}')
+                .replace(/\{\{\s*\/if\s*\}\}/g, '{% endif %}');
+
+            // Return the converted Jinja code
+            return handlebarsCode;
 
 
 
