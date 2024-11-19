@@ -10,7 +10,6 @@
         .code-input,
         .code-output {
             height: 50vh !important;
-            /* Set the height of the textareas to 50% of the viewport height */
         }
 
         .copy-icon {
@@ -26,17 +25,24 @@
             margin-bottom: 10px;
         }
 
-        #convertButton {
+        #convertButton,
+        #extractVariablesButton {
             margin: 20px 0;
-            /* Add margin to the top and bottom of the button */
         }
 
-        /* Reduce space between textarea columns by setting padding */
         .row>.col,
         .row>[class^="col-"] {
             padding-right: 12px;
             padding-left: 12px;
+        }
 
+        #variablesContainer {
+            margin-top: 20px;
+        }
+
+        #variablesList {
+            max-height: 200px;
+            overflow-y: auto;
         }
 
     </style>
@@ -46,11 +52,8 @@
     <div class="container mt-4">
         <h1>Handlebars to Jinja Converter</h1>
 
-
-
         <h2>Code</h2>
         <div class="row">
-            
             <div class="col">
                 <textarea id="handlebarsInput" class="form-control code-input" placeholder="Enter Handlebars.js code here..."></textarea>
             </div>
@@ -62,26 +65,36 @@
             </div>
         </div>
         
-                <div id="jsonReplacementsContainer">
-            <h2>Additional Replacements for attributes</h2>
-            <div class="form-row form-row-container">
-                <div class="col">
-                    <input type="text" class="form-control" placeholder="Attribute">
-                </div>
-                <div class="col">
-                    <input type="text" class="form-control" placeholder="Moengage Attribute">
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-success" onclick="addKeyValuePair()">+</button>
-                </div>
-            </div>
+                <div class="text-center">
+            <button id="extractVariablesButton" class="btn btn-secondary">Extract Variables</button>
         </div>
-          
+
+        <div id="jsonReplacementsContainer">
+            <h2>Additional Replacements for attributes</h2>
+            <div id="replacementsList">
+                <!-- Default key-value pair -->
+                <div class="form-row form-row-container">
+                    <div class="col">
+                        <input type="text" class="form-control" placeholder="Attribute">
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" placeholder="Moengage Attribute">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-success" onclick="addKeyValuePair()">+</button>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
 
         <div class="text-center">
             <button id="convertButton" class="btn btn-primary">Convert to Jinja</button>
         </div>
-    </div>
+
+
+
+
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.3/dist/umd/popper.min.js"></script>
@@ -113,6 +126,8 @@
             jinjaOutputTextarea.select();
             document.execCommand('copy');
         }
+
+
 
 
         // Function to collect key-value pairs and convert to JSON
@@ -346,6 +361,108 @@
         }
 
     </script>
+
+
+    <script>
+        document.getElementById('extractVariablesButton').addEventListener('click', function() {
+            const handlebarsCode = document.getElementById('handlebarsInput').value;
+            const variablesList = extractVariablesFromHandlebars(handlebarsCode);
+
+            populateReplacements(variablesList);
+        });
+        
+        document.getElementById('addKeyValuePairButton').addEventListener('click', function() {
+        addKeyValuePair(); // Function to add an empty key-value pair
+    });
+
+
+        function extractVariablesFromHandlebars(handlebarsCode) {
+            // Regex to match any Handlebars expressions within double curly braces
+            const variableRegex = /\{\{\s*([^\s\}]+)\s*\}\}/g;
+            const blockVariableRegex = /\{\{\s*(?:#if|#compare|#unless|#each|#with)\s+([^\s\}]+)(?:\s+[^}]+)?\s*\}\}/g;
+            const variablesList = new Set();
+            let match;
+
+            // Extract Handlebars expressions
+            while ((match = variableRegex.exec(handlebarsCode)) !== null) {
+                // Exclude Handlebars helpers and block expressions
+                if (!match[1].startsWith('#') && !match[1].startsWith('/') && !['else', 'this'].includes(match[1])) {
+                    variablesList.add(match[1]);
+                }
+            }
+
+            // Extract variables from Handlebars blocks like #if, #compare, #each, etc.
+            while ((match = blockVariableRegex.exec(handlebarsCode)) !== null) {
+                variablesList.add(match[1]);
+            }
+
+            return Array.from(variablesList);
+        }
+
+        /*function displayVariables(variablesList) {
+const variablesContainer = document.getElementById('variablesList');
+variablesContainer.innerHTML = '';
+
+variablesList.forEach(variable => {
+const listItem = document.createElement('li');
+listItem.classList.add('list-group-item');
+listItem.textContent = variable;
+variablesContainer.appendChild(listItem);
+});
+}*/
+
+        function populateReplacements(variablesList) {
+            const replacementsContainer = document.getElementById('replacementsList');
+           // replacementsContainer.innerHTML = ''; // Clear the existing list
+
+            variablesList.forEach(variable => {
+                const formRow = document.createElement('div');
+                formRow.classList.add('form-row', 'form-row-container');
+
+                const attributeInput = document.createElement('input');
+                attributeInput.type = 'text';
+                attributeInput.className = 'form-control';
+                attributeInput.placeholder = 'Attribute';
+                attributeInput.value = variable; // Set the input value to the variable name
+                
+
+                const moengageInput = document.createElement('input');
+                moengageInput.type = 'text';
+                moengageInput.className = 'form-control';
+                moengageInput.placeholder = 'Moengage Attribute';
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'btn btn-danger';
+                removeButton.textContent = '-';
+                removeButton.onclick = function() {
+                    removeKeyValuePair(removeButton);
+                };
+
+                const attributeCol = document.createElement('div');
+                attributeCol.className = 'col';
+                attributeCol.appendChild(attributeInput);
+
+                const moengageCol = document.createElement('div');
+                moengageCol.className = 'col';
+                moengageCol.appendChild(moengageInput);
+
+                const buttonCol = document.createElement('div');
+                buttonCol.className = 'col-auto';
+                buttonCol.appendChild(removeButton);
+
+                formRow.appendChild(attributeCol);
+                formRow.appendChild(moengageCol);
+                formRow.appendChild(buttonCol);
+
+                replacementsContainer.appendChild(formRow);
+            });
+        }
+        
+        
+
+    </script>
+
 </body>
 
 </html>
