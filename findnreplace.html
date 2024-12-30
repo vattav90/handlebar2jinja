@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Find and Replace Bulk</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .code-input,
+        .code-output {
+            height: 50vh !important;
+        }
+
+        .copy-icon {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 10px;
+            cursor: pointer;
+            color: #000;
+        }
+
+        .form-row-container {
+            margin-bottom: 10px;
+        }
+
+        #convertButton,
+        #populateFromJSONButton,
+        #copyJSONButton {
+            margin: 20px 0;
+        }
+
+        .row>.col,
+        .row>[class^="col-"] {
+            padding-right: 12px;
+            padding-left: 12px;
+        }
+
+        #variablesContainer {
+            margin-top: 20px;
+        }
+
+        #variablesList {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #jsonInput{
+            height: 20vh !important;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1>Find and Replace</h1>
+
+        <h2>Text/Code</h2>
+        <div class="row">
+            <div class="col">
+                <textarea id="handlebarsInput" class="form-control code-input" placeholder="Enter text/code here..."></textarea>
+            </div>
+            <div class="col">
+                <textarea id="jinjaOutput" class="form-control code-output" placeholder="Text/Code with replacements will appear here" readonly></textarea>
+            </div>
+            <div class="col-auto">
+                <i class="fas fa-copy copy-icon" onclick="copyToClipboard()"></i>
+            </div>
+        </div>
+    
+
+        <div id="jsonReplacementsContainer">
+            <h2>Additional Replacements for attributes</h2>
+            <div id="replacementsList">
+                <!-- Default key-value pair -->
+                <div class="form-row form-row-container">
+                    <div class="col">
+                        <input type="text" class="form-control" placeholder="Value to be replaced">
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" placeholder="Replacement Value">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-success" onclick="addKeyValuePair()">+</button>
+                    </div>
+                </div>
+            </div> 
+        </div>
+
+        <div class="d-flex justify-content-center">
+            <button id="convertButton" class="btn btn-primary mr-2">Find and Replace</button>
+            <button id="copyJSONButton" class="btn btn-secondary">Copy JSON</button>
+        </div>
+
+        <div id="jsonInputContainer">
+            <h2>Enter JSON directly</h2>
+            <textarea id="jsonInput" class="form-control code-input" placeholder="Enter JSON here..."></textarea>
+            <div class="text-center">
+                <button id="populateFromJSONButton" class="btn btn-secondary">Populate key-value pairs from JSON</button>
+            </div>
+        </div>  
+    </div>
+
+
+
+
+
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.4.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function addKeyValuePair() {
+            var container = document.getElementById("jsonReplacementsContainer");
+            var formRow = document.createElement("div");
+            formRow.classList.add("form-row", "form-row-container");
+            formRow.innerHTML = `
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Value to be replaced">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" placeholder="Replacement Value">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-danger" onclick="removeKeyValuePair(this)">-</button>
+                </div>`;
+            container.appendChild(formRow);
+        }
+
+        function removeKeyValuePair(button) {
+            button.closest(".form-row").remove();
+        }
+
+        function copyToClipboard() {
+            var jinjaOutputTextarea = document.getElementById('jinjaOutput');
+            jinjaOutputTextarea.select();
+            document.execCommand('copy');
+        }
+
+
+
+
+        // Function to collect key-value pairs and convert to JSON
+        function getReplacementsJSON() {
+            const pairs = document.querySelectorAll("#jsonReplacementsContainer .form-row");
+            const replacements = {};
+            pairs.forEach(pair => {
+                const key = pair.querySelector(".col input[type='text']").value.trim();
+                const value = pair.querySelector(".col + .col input[type='text']").value.trim();
+                if (key) { // Only add non-empty keys to replacements
+                    replacements[key] = value;
+                }
+            });
+            console.log('getReplacementsJSON');
+            return replacements;
+        }
+
+    </script>
+
+
+    <script>
+        
+        function populateKeyValuePairs(replacements) {
+            const container = document.getElementById("replacementsList");
+            // Clear existing pairs
+            
+
+            // Create new pairs from replacements
+            Object.entries(replacements).forEach(([key, value]) => {
+                const formRow = document.createElement("div");
+                formRow.classList.add("form-row", "form-row-container");
+                formRow.innerHTML = `
+                    <div class="col">
+                        <input type="text" class="form-control" value="${key}">
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" value="${value}">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger" onclick="removeKeyValuePair(this)">-</button>
+                    </div>`;
+                container.appendChild(formRow);
+            });
+        }
+
+        document.getElementById('populateFromJSONButton').addEventListener('click', function() {
+            console.log('Button was clicked');
+            const jsonString = document.getElementById('jsonInput').value;
+            let replacements;
+
+            // Try parsing the JSON string first
+            try {
+                replacements = JSON.parse(jsonString);
+                // Populate key-value pairs from replacements
+                populateKeyValuePairs(replacements);
+            } catch (error) {
+                console.error('Invalid JSON format:', error);
+            }
+        });
+
+        document.getElementById('convertButton').addEventListener('click', function() {
+            // Convert key-value pairs to JSON here first
+            console.log('Button was clicked');
+            const jsonReplacements = JSON.stringify(getReplacementsJSON());
+            const handlebarsCode = document.getElementById('handlebarsInput').value;
+
+            // Parse the JSON string back to an object
+            const replacements = JSON.parse(jsonReplacements);
+            if (replacements) { // Ensure that replacements is not null
+                let jinjaOutput = applyJsonReplacements(handlebarsCode, replacements);
+                document.getElementById('jinjaOutput').value = jinjaOutput;
+                console.log('replacementsParsed');
+            }
+        });
+
+        function parseReplacements(jsonString) {
+            try {
+                return JSON.parse(jsonString);
+            } catch (error) {
+                console.error('Invalid JSON format:', error);
+                // Return null or handle the error in another way
+                return null;
+            }
+        }
+
+
+        // Helper function to apply final JSON replacements to the Handlebars code
+        function applyJsonReplacements(handlebarsCode, replacements) {
+            // Perform direct string replacements based on the JSON object
+            Object.entries(replacements).forEach(([key, value]) => {
+                // Create a regex pattern to match the exact key
+                const pattern = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'g');
+                // Replace all occurrences of the key in the template with the corresponding value
+                handlebarsCode = handlebarsCode.replace(pattern, value);
+            });
+
+            return handlebarsCode;
+        }
+
+
+        function copyJSON() {
+    const jsonReplacements = JSON.stringify(getReplacementsJSON());
+    navigator.clipboard.writeText(jsonReplacements).then(function() {
+        console.log('Copying to clipboard was successful!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+
+document.getElementById('copyJSONButton').addEventListener('click', copyJSON);
+        
+
+</script>
+
+
+
+
+</body>
+
+</html>
