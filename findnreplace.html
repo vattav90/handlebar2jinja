@@ -232,11 +232,13 @@
             // Perform direct string replacements based on the JSON object
             Object.entries(replacements).forEach(([key, value]) => {
                 // Create a regex pattern to match the exact key
-                const pattern = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'g');
+                const pattern = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
                 // Replace all occurrences of the key in the template with the corresponding value
                 handlebarsCode = handlebarsCode.replace(pattern, value);
             });
 
+             // Replace '{{ ' with '{{' and ' }}' with '}}'
+    handlebarsCode = handlebarsCode.replace(/{{ /g, '{{').replace(/ }}/, '}}');
             return handlebarsCode;
         }
 
