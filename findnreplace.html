@@ -20,7 +20,14 @@
             cursor: pointer;
             color: #000;
         }
-
+        .exchange-icon {
+            position: absolute;
+            top: 10;
+            right: 0;
+            padding: 10px;
+            cursor: pointer;
+            color: #000;
+        }
         .form-row-container {
             margin-bottom: 10px;
         }
@@ -66,7 +73,9 @@
                 <textarea id="jinjaOutput" class="form-control code-output" placeholder="Text/Code with replacements will appear here" readonly></textarea>
             </div>
             <div class="col-auto">
-                <i class="fas fa-copy copy-icon" onclick="copyToClipboard()"></i>
+                <i class="fas fa-copy copy-icon" onclick="copyToClipboard()"></i></br></br>
+                <i class="convertButton exchange-icon fas fa-exchange-alt"></i>
+                
             </div>
         </div>
     
@@ -90,7 +99,7 @@
         </div>
 
         <div class="d-flex justify-content-center">
-            <button id="convertButton" class="btn btn-primary mr-2">Find and Replace</button>
+            <button id="convertButton" class="convertButton btn btn-primary mr-2">Find and Replace</button>
             <button id="copyJSONButton" class="btn btn-secondary">Copy JSON</button>
         </div>
 
@@ -164,27 +173,52 @@
     <script>
         
         function populateKeyValuePairs(replacements) {
-            const container = document.getElementById("replacementsList");
-            // Clear existing pairs
-            
+    const container = document.getElementById("replacementsList");
 
-            // Create new pairs from replacements
-            Object.entries(replacements).forEach(([key, value]) => {
-                const formRow = document.createElement("div");
-                formRow.classList.add("form-row", "form-row-container");
-                formRow.innerHTML = `
-                    <div class="col">
-                        <input type="text" class="form-control" value="${key}">
-                    </div>
-                    <div class="col">
-                        <input type="text" class="form-control" value="${value}">
-                    </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-danger" onclick="removeKeyValuePair(this)">-</button>
-                    </div>`;
-                container.appendChild(formRow);
-            });
-        }
+    // Clear existing pairs
+
+
+    // Create new pairs from replacements
+    Object.entries(replacements).forEach(([key, value]) => {
+        const formRow = document.createElement("div");
+        formRow.classList.add("form-row", "form-row-container");
+
+        const keyCol = document.createElement("div");
+        keyCol.classList.add("col");
+
+        const valueCol = document.createElement("div");
+        valueCol.classList.add("col");
+
+        const keyInput = document.createElement("input");
+        keyInput.setAttribute("type", "text");
+        keyInput.setAttribute("class", "form-control");
+        keyInput.setAttribute("value", key);
+
+        const valueInput = document.createElement("input");
+        valueInput.setAttribute("type", "text");
+        valueInput.setAttribute("class", "form-control");
+        valueInput.setAttribute("value", value);
+
+        const btnCol = document.createElement("div");
+        btnCol.classList.add("col-auto");
+
+        const btn = document.createElement("button");
+        btn.setAttribute("type", "button");
+        btn.setAttribute("class", "btn btn-danger");
+        btn.setAttribute("onclick", "removeKeyValuePair(this)");
+        btn.innerText = "-";
+
+        keyCol.appendChild(keyInput);
+        valueCol.appendChild(valueInput);
+        btnCol.appendChild(btn);
+
+        formRow.appendChild(keyCol);
+        formRow.appendChild(valueCol);
+        formRow.appendChild(btnCol);
+
+        container.appendChild(formRow);
+    });
+}
 
         document.getElementById('populateFromJSONButton').addEventListener('click', function() {
             console.log('Button was clicked');
@@ -201,20 +235,21 @@
             }
         });
 
-        document.getElementById('convertButton').addEventListener('click', function() {
-            // Convert key-value pairs to JSON here first
-            console.log('Button was clicked');
-            const jsonReplacements = JSON.stringify(getReplacementsJSON());
-            const handlebarsCode = document.getElementById('handlebarsInput').value;
-
-            // Parse the JSON string back to an object
-            const replacements = JSON.parse(jsonReplacements);
-            if (replacements) { // Ensure that replacements is not null
-                let jinjaOutput = applyJsonReplacements(handlebarsCode, replacements);
-                document.getElementById('jinjaOutput').value = jinjaOutput;
-                console.log('replacementsParsed');
-            }
-        });
+        document.querySelectorAll('.convertButton').forEach(function(button) {
+    button.addEventListener('click', function() {
+        // Convert key-value pairs to JSON here first
+        console.log('Button was clicked');
+        const jsonReplacements = JSON.stringify(getReplacementsJSON());
+        const handlebarsCode = document.getElementById('handlebarsInput').value;
+        // Parse the JSON string back to an object
+        const replacements = JSON.parse(jsonReplacements);
+        if (replacements) { // Ensure that replacements is not null
+            let jinjaOutput = applyJsonReplacements(handlebarsCode, replacements);
+            document.getElementById('jinjaOutput').value = jinjaOutput;
+            console.log('replacementsParsed');
+        }
+    });
+});
 
         function parseReplacements(jsonString) {
             try {
